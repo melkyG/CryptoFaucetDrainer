@@ -3,6 +3,16 @@ import pyautogui
 import time
 from datetime import datetime
 import sites  # your sites.py
+"""
+print("Move your mouse to the desired position. Ctrl+C to stop.")
+try:
+    while True:
+        x, y = pyautogui.position()
+        print(f"Mouse position: ({x}, {y})", end="\r")
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print("\nDone.")
+"""
 
 # Time-stamped logger
 def log(message):
@@ -30,7 +40,7 @@ def run_faucet(site_name, site_info):
     driver.maximize_window()
     driver.get(site_info["url"])
     
-    time.sleep(6)  # Wait for page + ads
+    time.sleep(8)  # Wait for page + ads
 
     # Coordinates — UPDATE THESE to match your screen!
     coords = {
@@ -46,6 +56,7 @@ def run_faucet(site_name, site_info):
     # NO THANKS
     click(*coords["no_thanks"])
     log("✅ 'NO THANKS' clicked")
+    time.sleep(1)
 
     # LOGIN button
     click(*coords["login_button"])
@@ -63,16 +74,14 @@ def run_faucet(site_name, site_info):
     # Final LOGIN
     click(*coords["final_login"])
     log("✅ Final login clicked")
-    time.sleep(8)
+    time.sleep(13)
 
-    # Wait after login to let page load
-    time.sleep(5)
 
     # Scroll to bottom (simulate PAGE_DOWN)
     pyautogui.press("pagedown")
     time.sleep(1)
     pyautogui.press("pagedown")
-    time.sleep(1)
+    time.sleep(7)
 
     # Click ROLL!
     click(*coords["roll_button"])
@@ -81,6 +90,8 @@ def run_faucet(site_name, site_info):
     time.sleep(10)
     driver.quit()
     log("✅ Browser closed")
+    log("brb 3 min nap (due to same site)")
+    time.sleep(501)
 
 # Run loop
 if __name__ == "__main__":
