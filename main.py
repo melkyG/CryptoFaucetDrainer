@@ -3,7 +3,13 @@ import pyautogui
 import time
 from datetime import datetime
 import sites  # your sites.py
-"""
+import os
+
+# Path to your images
+ASSET_PATH = r"C:\Users\gmelk\OneDrive\Desktop\Trading & Coding\Python Projects\CryptoFaucetDrainer\assets"
+pyautogui.FAILSAFE = False
+
+
 print("Move your mouse to the desired position. Ctrl+C to stop.")
 try:
     while True:
@@ -12,8 +18,47 @@ try:
         time.sleep(0.1)
 except KeyboardInterrupt:
     print("\nDone.")
-"""
 
+
+# Helper to locate and click an image
+def click_image(image_name, confidence=0.9, timeout=10):
+    image_path = os.path.join(ASSET_PATH, image_name)
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        location = pyautogui.locateOnScreen(image_path, confidence=confidence)
+        if location:
+            pyautogui.click(pyautogui.center(location))
+            time.sleep(1)  # Small pause after clicking
+            return True
+        time.sleep(0.5)
+
+    print(f"[⚠️] Image not found: {image_name}")
+    return False
+
+# Main function to connect to VPN
+def ensure_vpn_connected():
+    print("[🌐] Starting VPN automation")
+
+    # Step 1: Reveal taskbar
+    pyautogui.moveTo(1274, 1029, duration=0.5)
+    time.sleep(1)  # Wait for taskbar to appear
+
+    # Step 2: Click Nord icon from taskbar or open icon tray
+    if not click_image("nordicon.png"):
+        print("[ℹ️] Trying to open hidden icons...")
+        click_image("openicons.png")  # open the hidden tray
+        time.sleep(1)
+        click_image("nordicon.png")
+
+    # Step 3: Click Quick Connect
+    if click_image("quickconnect.png"):
+        print("[✅] Quick Connect clicked")
+    else:
+        print("[❌] Could not find 'Quick Connect'")
+
+    print("[⏳] Waiting for VPN to establish connection...")
+    time.sleep(15)  # Wait for connection to finalize
 # Time-stamped logger
 def log(message):
     print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {message}")
@@ -95,6 +140,7 @@ def run_faucet(site_name, site_info):
 
 # Run loop
 if __name__ == "__main__":
+    ensure_vpn_connected()
     while True:
         for site_name, site_info in sites.site_list.items():
             run_faucet(site_name, site_info)
