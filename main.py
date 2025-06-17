@@ -1,115 +1,91 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from datetime import datetime
+import undetected_chromedriver as uc
+import pyautogui
 import time
-import sites  # Your separate module with site info
+from datetime import datetime
+import sites  # your sites.py
 
+# Time-stamped logger
 def log(message):
-    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-    print(f"{timestamp} {message}")
+    print(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {message}")
 
+# Helper: Click on screen coords
+def click(x, y, delay=0.5):
+    pyautogui.moveTo(x, y, duration=0.3)
+    pyautogui.click()
+    time.sleep(delay)
+
+# Helper: Type text
+def type_text(text, delay=0.5):
+    pyautogui.write(text, interval=0.05)
+    time.sleep(delay)
+
+# Main automation flow
 def run_faucet(site_name, site_info):
-    log(f"Connecting to {site_name}: {site_info['url']}")
-    try:
-        options = webdriver.ChromeOptions()
-        options.add_argument("--disable-gpu")
-        options.add_argument("--log-level=3")
-        options.add_argument("--silent")
-        options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    log(f"🌐 Connecting to {site_name}: {site_info['url']}")
+    
+    # Launch undetected browser
+    options = uc.ChromeOptions()
+    options.add_argument("--start-maximized")
+    driver = uc.Chrome(options=options)
+    driver.maximize_window()
+    driver.get(site_info["url"])
+    
+    time.sleep(6)  # Wait for page + ads
 
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+    # Coordinates — UPDATE THESE to match your screen!
+    coords = {
+        "no_thanks": (954, 276),         # location of "NO THANKS"
+        "login_button": (1500, 140),      # LOGIN on header
+        "email_field": (980, 325),      # Email input field
+        "password_field": (980, 405),     # Password field
+        "final_login": (1080, 585),        # Final LOGIN button
+        "captcha_checkbox": (860, 650),   # Manual CAPTCHA checkbox
+        "roll_button": (945, 905),        # ROLL! button
+    }
 
-        driver.get(site_info['url'])
-        wait = WebDriverWait(driver, 10)
+    # NO THANKS
+    click(*coords["no_thanks"])
+    log("✅ 'NO THANKS' clicked")
 
-        # Step 1: Click "NO THANKS"
-        try:
-            no_thanks_button = wait.until(
-                EC.element_to_be_clickable((By.XPATH, "//div[@class='pushpad_deny_button' and normalize-space(text())='NO THANKS']"))
-            )
-            no_thanks_button.click()
-            log(f"✅ {site_name}: 'NO THANKS' clicked")
-        except Exception:
-            log(f"ℹ️ {site_name}: 'NO THANKS' not found or already dismissed")
+    # LOGIN button
+    click(*coords["login_button"])
+    log("✅ 'LOGIN' clicked")
+    time.sleep(2)
 
-        # Step 2: Click any version of "LOGIN"
-        login_clicked = False
-        try:
-            login_button = driver.find_element(By.XPATH, "//button[contains(@class, 'login_menu_button') and contains(text(), 'LOGIN')]")
-            login_button.click()
-            login_clicked = True
-        except:
-            try:
-                login_link = driver.find_element(By.XPATH, "//a[normalize-space(text())='LOGIN']")
-                login_link.click()
-                login_clicked = True
-            except:
-                try:
-                    li_login = driver.find_element(By.XPATH, "//li[contains(@class,'login_menu_button')]//a[normalize-space(text())='LOGIN']")
-                    li_login.click()
-                    login_clicked = True
-                except:
-                    pass
+    # Email and Password
+    click(*coords["email_field"])
+    type_text(site_info["email"])
+    
+    click(*coords["password_field"])
+    type_text(site_info["password"])
+    log("✅ Credentials entered")
 
-        if login_clicked:
-            log(f"✅ {site_name}: 'LOGIN' clicked")
-        else:
-            log(f"⚠️ {site_name}: Could not click any 'LOGIN' element")
+    # Final LOGIN
+    click(*coords["final_login"])
+    log("✅ Final login clicked")
+    time.sleep(8)
 
-        time.sleep(1)  # Allow login modal/form to load
+    # Wait after login to let page load
+    time.sleep(5)
 
-        # Step 3: Fill credentials
-        try:
-            driver.find_element(By.ID, "login_form_btc_address").send_keys(site_info["email"])
-            driver.find_element(By.ID, "login_form_password").send_keys(site_info["password"])
-            log(f"✅ {site_name}: Credentials filled")
-        except Exception as e:
-            log(f"❌ {site_name}: Failed to fill login form — {e}")
-            driver.quit()
-            return
+    # Scroll to bottom (simulate PAGE_DOWN)
+    pyautogui.press("pagedown")
+    time.sleep(1)
+    pyautogui.press("pagedown")
+    time.sleep(1)
 
-        # Step 4: Submit login
-        try:
-            driver.find_element(By.ID, "login_button").click()
-            log(f"✅ {site_name}: Final 'LOGIN!' clicked")
-            time.sleep(10)
-        except Exception as e:
-            log(f"❌ {site_name}: Failed to click final login — {e}")
-            driver.quit()
-            return
-        
+    # Click ROLL!
+    click(*coords["roll_button"])
+    log("🎲 'ROLL' button clicked")
 
-        # Step 5: Wait and press "ROLL!" button
-        try:
-            roll_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.ID, "free_play_form_button"))
-            )
-            log(f"🎲 {site_name}: ready to 'ROLL!'")
-            #roll_button.click()
-            #log(f"🎲 {site_name}: 'ROLL!' button clicked")
-        except Exception as e:
-            log(f"⚠️ {site_name}: Could not find or click 'ROLL!' — {e}")
+    time.sleep(10)
+    driver.quit()
+    log("✅ Browser closed")
 
-        # Step 6: Wait before closing
-        time.sleep(120)
-        driver.quit()
-        log(f"✅ {site_name}: Process finished and browser closed")
-
-    except Exception as e:
-        log(f"❌ {site_name}: Failed — {e}")
-
-
-
+# Run loop
 if __name__ == "__main__":
     while True:
         for site_name, site_info in sites.site_list.items():
             run_faucet(site_name, site_info)
-        log("⏱ Sleeping for 60 minutes...\n")
+        log("⏱ Sleeping 60 minutes...")
         time.sleep(60 * 60)
