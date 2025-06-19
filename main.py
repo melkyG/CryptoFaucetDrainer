@@ -65,7 +65,7 @@ def click_image(image_name, confidence=0.8, timeout=10):
             pass  
         time.sleep(0.5)
 
-    print(f"[⚠️] Image not found: {image_name}")
+    log(f"[⚠️] Image not found: {image_name}")
     return False
 
 # Main function to connect to VPN
@@ -110,7 +110,7 @@ def ensure_vpn_connected():
         except:
             print("couldnt find quickconnect2")
     """
-    print("[⏳] Waiting for VPN to establish connection...")
+    log("[⏳] Waiting for VPN to establish connection...")
     time.sleep(15)
 
 # Time-stamped logger
@@ -177,7 +177,7 @@ def run_faucet(site_name, site_info):
     
     click_image("password.png") #click(*coords["password_field"])
     type_text(site_info["password"])
-    log("✅ Credentials entered")
+    log("Credentials entered")
     time.sleep(1)
 
     # Final LOGIN
@@ -198,18 +198,25 @@ def run_faucet(site_name, site_info):
     #"""
     if auth_needed:
         log("🔐 Auth message detected, beginning manual authentication flow...")
-        print("looking for chrome")
+        log("looking for chrome")
         # Reveal Start menu and launch Chrome
         for attempt in range(MAX_RETRIES):
             pyautogui.hotkey("ctrl", "esc")
             time.sleep(1.5)
             if click_image("chrome.png", confidence=0.94, timeout=10):
                 log("📨 'Chrome' clicked")
+                for attempt in range(MAX_RETRIES):
+                    pyautogui.hotkey("ctrl", "esc")
+                    time.sleep(1.5)
+                    if click_image("whousing.png", confidence=0.8, timeout=10):
+                        break
+                    else:
+                        log(f"No google acc found, trying again... {attempt + 1}") 
                 break
             else:
-                print(f"No chrome found, trying again... {attempt + 1}") 
+                log(f"No chrome found, trying again... {attempt + 1}") 
         
-        time.sleep(7)
+        
 
         click_image("whousing.png")
         time.sleep(7)
@@ -236,7 +243,7 @@ def run_faucet(site_name, site_info):
 
 
             try:
-                print("checking for recent..")
+                log("checking for recent..")
                 recent = click_image("mostrecent.png", confidence=0.6, timeout=10)
                 time.sleep(3)
                 pyautogui.click()
@@ -297,7 +304,7 @@ def run_faucet(site_name, site_info):
                 log("📨 'Chrome' clicked")
                 break
             else:
-                print(f"No chrome found, trying again... {attempt + 1}") 
+                log(f"No chrome found, trying again... {attempt + 1}") 
         time.sleep(7)
 
         click_image("guest.png")
