@@ -78,8 +78,10 @@ def ensure_vpn_connected():
         pyautogui.write("nordvpn", interval=0.05)
         time.sleep(1)
         pyautogui.press("enter")
+        time.sleep(1)
         if click_image("quickconnect2.png", confidence=0.7, timeout=5):
             log("'Quick Connect' clicked")
+            log("[⏳] Waiting for VPN to establish connection...")
             break
         else:
             log(f"trying again... {attempt + 1}")
@@ -110,7 +112,6 @@ def ensure_vpn_connected():
         except:
             print("couldnt find quickconnect2")
     """
-    log("[⏳] Waiting for VPN to establish connection...")
     time.sleep(15)
 
 # Time-stamped logger
@@ -361,7 +362,7 @@ def run_faucet(site_name, site_info):
             time.sleep(10)
             break
         else:
-            log("⚠️ 'verify.png' not found on this attempt. Will retry.")
+            log(f"⚠️ 'verify.png' not found on this attempt. Retrying... {attempt + 1}")
 
     if claim_ready:
         # Click ROLL!
