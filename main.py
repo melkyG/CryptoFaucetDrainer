@@ -67,7 +67,7 @@ def click_image(image_name, confidence=0.8, timeout=10):
 
 # Main function to connect to VPN
 def ensure_vpn_connected():
-    print("[🌐] Starting VPN automation")
+    log("[🌐] Starting VPN automation")
 
     #pyautogui.moveTo(1274, 1078, duration=2)  # Reveal taskbar
     pyautogui.hotkey("ctrl", "esc")
@@ -80,7 +80,7 @@ def ensure_vpn_connected():
 
     while time.time() - start_time < 25:
         if click_image("quickconnect2.png", confidence=0.7, timeout=5):
-            log("✅ 'Quick Connect' clicked")
+            log("'Quick Connect' clicked")
             break
         else:
             time.sleep(1) 
@@ -134,22 +134,10 @@ def run_faucet(site_name, site_info):
     driver.delete_all_cookies()
     driver.refresh()
     log("🧹 Cleared cookies and refreshed")
-  # Wait for page + ads
-
-    # Coordinates — UPDATE THESE to match your screen!
-    coords = {
-        "no_thanks": (954, 276),         # location of "NO THANKS"
-        "login_button": (1500, 140),     # LOGIN on header
-        "email_field": (980, 325),       # Email input field
-        "password_field": (980, 405),    # Password field
-        "final_login": (1080, 585),      # Final LOGIN button
-        "captcha_checkbox": (860, 650),  # Manual CAPTCHA checkbox
-        "roll_button": (945, 910),       # ROLL! button
-    }
 
     # NO THANKS
     for attempt in range(MAX_RETRIES):
-        if click_image("nothanks.png", confidence=0.7, timeout=7):
+        if click_image("nothanks.png", confidence=0.7, timeout=8):
             log("'NO THANKS' clicked")
             time.sleep(1)
             break
@@ -202,18 +190,22 @@ def run_faucet(site_name, site_info):
     #"""
     if auth_needed:
         log("🔐 Auth message detected, beginning manual authentication flow...")
-
-        # Reveal Start menu and launch Chrome
-        pyautogui.hotkey("ctrl", "esc")
-        time.sleep(1.5)
-
         print("looking for chrome")
-        if click_image("chrome.png", confidence=0.94, timeout=10):
-            log("📨 'Chrome' clicked")
+        # Reveal Start menu and launch Chrome
+        for attempt in range(MAX_RETRIES):
+            pyautogui.hotkey("ctrl", "esc")
+            time.sleep(1.5)
+            if click_image("chrome.png", confidence=0.94, timeout=10):
+                log("📨 'Chrome' clicked")
+                break
+            else:
+                print("No chrome found, trying again...") 
+        
         time.sleep(7)
 
         click_image("whousing.png")
         time.sleep(7)
+        
 
         # Open new tab
         if not click_image("newtab.png"):
@@ -224,40 +216,28 @@ def run_faucet(site_name, site_info):
         # Launch Gmail
         if click_image("gmail.png", confidence=0.7, timeout=15):
             log("📫 Gmail clicked")
-            time.sleep(12)
 
-        # Click Gmail search bar
-        if click_image("searchmail.png", confidence=0.7, timeout=20):
-            log("🔍 Search Mail clicked")
-            time.sleep(1)
-            pyautogui.write("freebitco.in", interval=0.05)
-            pyautogui.press("enter")
-            time.sleep(5)
+        if not click_image("authemail.png", confidence=0.7, timeout=15):
+            # Click Gmail search bar
+            if click_image("searchmail.png", confidence=0.7, timeout=20):
+                log("🔍 Search Mail clicked")
+                time.sleep(1)
+                pyautogui.write("freebitco.in", interval=0.05)
+                pyautogui.press("enter")
+                time.sleep(5)
 
-        # Sort by recent if possible
-        recent = True
-        try:
-            print("checking for recent..")
-            recent = click_image("mostrecent.png", confidence=0.6, timeout=10)
-            time.sleep(3)
-            pyautogui.click()
-            pyautogui.moveRel(0, 60, duration=0.5)
-        except Exception as e:
-            log(f"❌ Not Recent: {e}")
-            recent = False
 
-        if not recent:
-            click_image("mostrelevant.png", confidence=0.7, timeout=10)
-            log("📨 'Most relevant' clicked")
-            time.sleep(2)
-            if click_image("mostrecent.png", confidence=0.7, timeout=10):
-                log("📨 'Most recent' clicked")
-                pyautogui.moveRel(0, -10, duration=0.5)
-                time.sleep(2)
-
-        # Click top email
-        pyautogui.click()
-        
+            try:
+                print("checking for recent..")
+                recent = click_image("mostrecent.png", confidence=0.6, timeout=10)
+                time.sleep(3)
+                pyautogui.click()
+                pyautogui.moveRel(0, 60, duration=0.5)
+                pyautogui.click()
+            except Exception as e:
+                log(f"❌ Not Recent: {e}")
+                recent = False
+            
         log("📧 First email clicked")
         time.sleep(6)
         for _ in range(30):  # Scroll down 20 times
@@ -295,7 +275,28 @@ def run_faucet(site_name, site_info):
             log(f"Manually verify this link: {link}")
             open_link_in_fresh_session(link)
         """
-        click_image("link.png")
+        click_image("locatelink.png")
+        pyautogui.moveRel(0, 33, duration=0.5)
+        pyautogui.rightClick()
+        time.sleep(1.5)
+        click_image("copylink.png")
+
+        # Reveal Start menu and launch Chrome
+        for attempt in range(MAX_RETRIES):
+            pyautogui.hotkey("ctrl", "esc")
+            time.sleep(1.5)
+            if click_image("chrome.png", confidence=0.94, timeout=10):
+                log("📨 'Chrome' clicked")
+                break
+            else:
+                print("No chrome found, trying again...") 
+        time.sleep(7)
+
+        click_image("guest.png")
+        time.sleep(7)
+        pyautogui.hotkey("ctrl", "v")
+        pyautogui.press("enter")
+
         if click_image("confirm.png", confidence=0.7, timeout=20):
             log("Confirm clicked")
             log("waiting for redirecting...")
@@ -310,25 +311,23 @@ def run_faucet(site_name, site_info):
     claim_ready = False
 
     for attempt in range(MAX_RETRIES):
-        # Scroll to bottom (simulate PAGE_DOWN)
         pyautogui.press("pagedown")
-        time.sleep(1)
+        time.sleep(1.5)
         pyautogui.press("pagedown")
-        time.sleep(1)
-        if pyautogui.locateOnScreen("notready.png", confidence=0.7):
-            log("f{RED} Claim not ready.{RESET} (might've logged into wrong acc)")
+        time.sleep(1.5)
+
+        if click_image("notready.png", confidence=0.7, timeout=15):
+            log(f"{RED}⚠️ Claim not ready. (might've logged into wrong acc){RESET}")
+            break
+
+        log(f"🔍 Attempt {attempt + 1} to find 'verify.png'")
+        if click_image("verify.png", confidence=0.7, timeout=15):
+            log("🔐 'Verify' clicked")
+            claim_ready = True
+            time.sleep(10)
             break
         else:
-            log(f"🔍 Attempt {attempt + 1} to find 'verify.png'")
-            if click_image("verify.png", confidence=0.7, timeout=15):
-                log("🔐 'Verify' clicked")
-                claim_ready = True
-                time.sleep(10)
-                break
-            else:
-                #pyautogui.press("f5")
-                #time.sleep(5)
-                log("⚠️ 'verify.png' not found after retries. Continuing without clicking.")
+            log("⚠️ 'verify.png' not found on this attempt. Will retry.")
 
     if claim_ready:
         # Click ROLL!
