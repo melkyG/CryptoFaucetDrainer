@@ -314,7 +314,26 @@ def run_faucet(site_name, site_info):
         log("✅ No authentication needed")
     
 
-    
+    if click_image("login.png", confidence=0.7, timeout=15):
+        for attempt in range(MAX_RETRIES):
+            if click_image("emailaddress.png", confidence=0.7, timeout=15):
+                pyautogui.moveRel(0, 30, duration=0.5)
+                pyautogui.click()
+                type_text(site_info["email"])
+                break
+            else:
+                pyautogui.scroll(-200) 
+                time.sleep(1)
+        
+        click_image("password.png") #click(*coords["password_field"])
+        type_text(site_info["password"])
+        log("✅ Credentials entered")
+        time.sleep(1)
+
+        # Final LOGIN
+        click_image("login2.png") #click(*coords["final_login"])
+        log(f"{GREEN}✅ Final 'LOGIN!' clicked{RESET}")
+        time.sleep(3)
 
     claim_ready = False
 
