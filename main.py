@@ -1,6 +1,7 @@
 import undetected_chromedriver as uc
 import pyautogui
 import pytesseract
+from PIL import Image
 import pyperclip
 import re
 import webbrowser
@@ -10,6 +11,8 @@ import sites  # your sites.py
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 # Path to your images
 ASSET_PATH = r"C:\Users\gmelk\OneDrive\Desktop\Trading & Coding\Python Projects\CryptoFaucetDrainer\assets"
@@ -69,13 +72,19 @@ def click_image(image_name, confidence=0.8, timeout=10):
 def ensure_vpn_connected():
     log("[🌐] Starting VPN automation")
 
-    #pyautogui.moveTo(1274, 1078, duration=2)  # Reveal taskbar
-    pyautogui.hotkey("ctrl", "esc")
-    time.sleep(1)
-
-    pyautogui.write("nordvpn", interval=0.05)
-    time.sleep(1)
-    pyautogui.press("enter")
+    for attempt in range(MAX_RETRIES):
+        pyautogui.hotkey("ctrl", "esc")
+        time.sleep(1.5)
+        pyautogui.write("nordvpn", interval=0.05)
+        time.sleep(1)
+        pyautogui.press("enter")
+        if click_image("quickconnect2.png", confidence=0.7, timeout=5):
+            log("'Quick Connect' clicked")
+            break
+        else:
+            log(f"trying again... {attempt + 1}")
+            
+    """    
     start_time = time.time()
 
     while time.time() - start_time < 25:
@@ -93,7 +102,7 @@ def ensure_vpn_connected():
         print("finishing setup...")
         time.sleep(10)
     
-    """
+    
     try: click_image("changeconnection.png")    
     except:
         print("couldnt find changeconnection")
@@ -142,7 +151,7 @@ def run_faucet(site_name, site_info):
             time.sleep(1)
             break
         else:
-            print("NO THANKS not found, trying again...") 
+            log(f"NO THANKS not found, trying again... {attempt + 1}") 
     
     # LOGIN button
     for attempt in range(MAX_RETRIES):
@@ -151,7 +160,7 @@ def run_faucet(site_name, site_info):
             time.sleep(1)
             break
         else:
-            print("'LOGIN' not found, trying again...") 
+            log(f"'LOGIN' not found, trying again... {attempt + 1}") 
     
     time.sleep(2)
 
@@ -174,15 +183,14 @@ def run_faucet(site_name, site_info):
     # Final LOGIN
     click_image("login2.png") #click(*coords["final_login"])
     log(f"{GREEN}✅ Final 'LOGIN!' clicked{RESET}")
-    time.sleep(6)
+    
     #"""
-
     # Check for authentication message
     auth_needed = True
     #"""
     try:
-        print("checking for authentication message..")
-        auth_needed = click_image("authmessage.png", confidence=0.7, timeout=15)
+        log("checking for authentication message..")
+        auth_needed = click_image("authmessage.png", confidence=0.7, timeout=20)
     except Exception as e:
         log(f"❌ Could not detect auth message: {e}")
         auth_needed = False
@@ -199,7 +207,7 @@ def run_faucet(site_name, site_info):
                 log("📨 'Chrome' clicked")
                 break
             else:
-                print("No chrome found, trying again...") 
+                print(f"No chrome found, trying again... {attempt + 1}") 
         
         time.sleep(7)
 
@@ -289,7 +297,7 @@ def run_faucet(site_name, site_info):
                 log("📨 'Chrome' clicked")
                 break
             else:
-                print("No chrome found, trying again...") 
+                print(f"No chrome found, trying again... {attempt + 1}") 
         time.sleep(7)
 
         click_image("guest.png")
@@ -334,16 +342,21 @@ def run_faucet(site_name, site_info):
         pyautogui.press("pagedown")
         click_image("roll.png")
         log("🎲 'ROLL' button clicked")
-        time.sleep(3)
-        pyautogui.scroll(+200) 
-        click_image("closeplaynow.png")
-        time.sleep(1)
-        pyautogui.scroll(-600) 
+        time.sleep(4)
+        pyautogui.scroll(+100) 
+        for attempt in range(MAX_RETRIES):
+            if click_image("closeplaynow.png", confidence=0.7, timeout=15):
+                log("🎉 Roll success detected")
+                break
+            else:
+                log(f"couldnt find close button, trying again... {attempt + 1}")
+        time.sleep(2)
+        pyautogui.scroll(-650) 
 
         start_time = time.time()
 
         while time.time() - start_time < 15:
-            if pyautogui.locateOnScreen("rollsuccess.png", confidence=0.7):
+            if click_image("rollsuccess.png", confidence=0.7, timeout=15):
                 log("🎉 Roll success detected")
                 found_result = True
 
@@ -359,7 +372,7 @@ def run_faucet(site_name, site_info):
                     log("⚠️ Roll success, but reward text not found.")
                 break
 
-            elif pyautogui.locateOnScreen("0.png", confidence=0.7):
+            elif click_image("0.png", confidence=0.7, timeout=15):
                 log(f"{RED}⚠️ Busted by captcha. Retry in 5 mins!{RESET}")
                 found_result = True
                 break
